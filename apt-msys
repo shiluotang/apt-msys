@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+declare readonly PACKAGES_DIR='/mingw/var/cache/mingw-get/packages'
+declare readonly WGET='wget --no-check-certificate -c'
+
+function download() {
+    local uri=${1}
+    if pushd ${PACKAGES_DIR} > /dev/null; then
+        echo "Download ${uri} start..."
+        if ${WGET} ${uri}; then
+            echo "Download ${uri} succeeded!"
+        else
+            echo "Download ${uri} failed!"
+        fi
+        popd > /dev/null
+    fi
+}
+
+function install() {
+    local package=""
+    local uris=""
+    local uri=""
+
+    for package in "${@}"
+    do
+        if uris=$(mingw-get install --print-uris ${package}); then
+            for uri in ${uris[@]}
+            do
+                #echo "uri = ${uri}"
+                download ${uri}
+            done
+            mingw-get install --verbose ${package}
+        fi
+    done
+}
+
+function reinstall() {
+    local package=""
+    local uris=""
+    local uri=""
+
+    for package in "${@}"
+    do
+        if uris=$(mingw-get reinstall --print-uris ${package}); then
+            for uri in ${uris[@]}
+            do
+                #echo "uri = ${uri}"
+                download ${uri}
+            done
+            mingw-get reinstall --verbose ${package}
+        fi
+    done
+}
+
+function remove() {
+    mingw-get remove ${@}
+}
+
+function search() {
+    mingw-get list | grep '^Package:' | grep ${@}
+}
+
+function show() {
+    mingw-get show ${@}
+}
+
+function main() {
+    local action=${1}
+    shift 1
+    case ${action} in
+        install)
+            install "${@}"
+            ;;
+        reinstall)
+            reinstall "${@}"
+            ;;
+        remove)
+            remove "${@}"
+            ;;
+        upgrade)
+            ;;
+        update)
+            ;;
+        search)
+            search "${@}"
+            ;;
+        show)
+            show "${@}"
+            ;;
+        *)
+            echo "Unsupported action ${action}"
+            ;;
+    esac
+}
+
+main "${@}"
