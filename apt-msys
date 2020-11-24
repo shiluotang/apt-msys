@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
+
+# Put this file at path '/usr/local/bin/apt-msys' --> %MINGW_HOME%/msys/1.0/local/bin/apt-msys
+
 declare readonly PACKAGES_DIR='/mingw/var/cache/mingw-get/packages'
 declare readonly WGET='wget --no-check-certificate -c'
 
 function download() {
     local uri=${1}
+    local filename=$(basename "${uri}" | sed 's/\?download.*$//g')
     if pushd ${PACKAGES_DIR} > /dev/null; then
         echo "Download ${uri} start..."
-        if ${WGET} ${uri}; then
+        if ${WGET} -O ${filename} ${uri}; then
             echo "Download ${uri} succeeded!"
         else
             echo "Download ${uri} failed!"
@@ -63,6 +67,10 @@ function show() {
     mingw-get show ${@}
 }
 
+function list() {
+    mingw-get list | grep 'Package: ' | gawk -F ' ' '{print $2}'
+}
+
 function main() {
     local action=${1}
     shift 1
@@ -85,6 +93,9 @@ function main() {
             ;;
         show)
             show "${@}"
+            ;;
+        list)
+            list "${@}"
             ;;
         *)
             echo "Unsupported action ${action}"
